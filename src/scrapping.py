@@ -6,22 +6,27 @@ from selenium.common.exceptions import TimeoutException
 import pickle
 
 def get_nbviews_tags(text_tags):
-    """ Extract nb of views and tags from the fino-tags class
+    """ Extract nb of views, tags from the fino-tags class and is trending flag
     :param text_finotags: text representation of fino-tags
-    :return: number of views, list with tags
+    :return: number of views, list with tags, is trending flat
     """
+    is_trending = False
+    if "THIS POST IS TRENDING" in text_tags:
+        is_trending = True
+        text_tags = text_tags.replace("THIS POST IS TRENDING.\n", "")
     txt_split = text_tags.split("\n")
     tags = txt_split[1:]
-    nb_views = int(txt_split[0].replace(" VIEWS", ""))
-    return nb_views, tags
+    txt_clean = txt_split[0].replace(" VIEWS", "").replace(".", "")
+    nb_views = int(txt_clean)
+    return nb_views, tags, is_trending
 
 def get_nbcomments(text_comments):
     """ Extract nb comments
     :param text_comments: text representation of fino-comments
     :return: number of comments
     """
-    txt_nb = text_comments.replace(" COMENTARIOS", "")
-    if txt_nb == "NO HAY":
+    txt_nb = text_comments.replace(" COMENTARIOS", "").replace("COMENTARIOS", "")
+    if (txt_nb == "NO HAY") or (txt_nb == ""):
         return 0
     else:
         return int(txt_nb)
@@ -59,36 +64,49 @@ xpath_npages = """/html/body[@id='fino_theme_clean']/div[@id='page']/main[@class
 n_pages = int(driver.find_element_by_xpath(xpath_npages).text.replace(".", ""))
 print("There are {} pages in finofilipino".format(n_pages))
 
+N_pages_extract = input("How many pages do you want to extract? (default = {}) ".format(n_pages))
 
-entries = driver.find_element_by_id("entries")
-entries_list = entries.find_elements_by_class_name("entry")
-# dictionary that will store all data
-# the url will be the key
-dict_entries = {}
+if N_pages_extract:
+    try:
+        N_pages_extract = int(N_pages_extract)
+    except ValueError:
+        print("The input number of pages was not possible to transform to integer")
+else:
+    N_pages_extract = n_pages
 
-for entry in entries_list:
-    #url extraction
-    url = entry.find_element_by_css_selector("a").get_attribute("href")
-    dict_entries[url] = {}
-    # title extraction
-    title = entry.find_element_by_class_name("entry-title").text
-    dict_entries[url]["title"] = title
-    # content - TODO review, quite basic right now
-    content = entry.find_element_by_class_name("entry-content").text
-    dict_entries[url]["content"] = content
-    # tags and number of views
-    text_finotags = entry.find_element_by_class_name("entry-virality.fino-tags").text
-    nviews, tags = get_nbviews_tags(text_finotags)
-    dict_entries[url]["nviews"] = nviews
-    dict_entries[url]["tags"] = tags
-    # number of comments
-    text_comments = entry.find_element_by_class_name("entry-meta.fino-comments").text
-    nbcomments = get_nbcomments(text_comments)
-    dict_entries[url]["nbcomments"] = nbcomments
-    # categories and publish date
-    text_cat_publishdate = entry.find_element_by_class_name("entry-meta.fino-category").text
-    categories = get_cats_pubdate(text_cat_publishdate)
-    # TODO parse publish date
-    dict_entries[url]["categories"] = categories
+for page in range(N_pages_extract):
+    print("Working at page {}".format(page + 1))
+    driver.get("{}page/{}/".format(fino_url, page+1))
+    entries = driver.find_element_by_id("entries")
+    entries_list = entries.find_elements_by_class_name("entry")
+    # dictionary that will store all data
+    # the url will be the key
+    dict_entries = {}
+
+    for entry in entries_list:
+        #url extraction
+        url = entry.find_element_by_css_selector("a").get_attribute("href")
+        dict_entries[url] = {}
+        # title extraction
+        title = entry.find_element_by_class_name("entry-title").text
+        dict_entries[url]["title"] = title
+        # content - TODO review, quite basic right now
+        content = entry.find_element_by_class_name("entry-content").text
+        dict_entries[url]["content"] = content
+        # tags and number of views
+        text_finotags = entry.find_element_by_class_name("entry-virality.fino-tags").text
+        nviews, tags, is_trending = get_nbviews_tags(text_finotags)
+        dict_entries[url]["nviews"] = nviews
+        dict_entries[url]["tags"] = tags
+        dict_entries[url]["is_trending"] = is_trending
+        # number of comments
+        text_comments = entry.find_element_by_class_name("entry-meta.fino-comments").text
+        nbcomments = get_nbcomments(text_comments)
+        dict_entries[url]["nbcomments"] = nbcomments
+        # categories and publish date
+        text_cat_publishdate = entry.find_element_by_class_name("entry-meta.fino-category").text
+        categories = get_cats_pubdate(text_cat_publishdate)
+        # TODO parse publish date
+        dict_entries[url]["categories"] = categories
 
 pickle.dump(dict_entries, open("./output/dict_entries.pkl", "wb"))
