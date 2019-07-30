@@ -75,6 +75,20 @@ def get_cats_pubdate(text_cat_publishdate):
     pub_date = get_publish_date(date_elems, now)
     return cats, pub_date
 
+def scrape_comments(driver, url, dict_entries):
+    driver.get(url)
+    timeout = 10
+    try:
+        WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, "post-list")))
+    except TimeoutException:
+        print("Timed out waiting for page to load Comments")
+        driver.quit()
+    # TODO review, not sure that is the actual way to go
+    thread = driver.find_element_by_id("disqus_thread")
+    iframes = thread.find_elements_by_css_selector("*")
+    # the second iframe is the one of interest
+    frame = iframes[1]
+
 fino_url = "https://finofilipino.org/"
 driver = webdriver.Chrome()
 driver.get(fino_url)
