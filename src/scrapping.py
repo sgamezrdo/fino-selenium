@@ -6,6 +6,7 @@ from selenium.common.exceptions import TimeoutException
 import pickle
 from datetime import datetime as dt
 from datetime import timedelta
+import time
 
 dict_time_dims = {"SEGUNDOS": timedelta(seconds=1),
                   "MIN": timedelta(minutes=1),
@@ -75,22 +76,77 @@ def get_cats_pubdate(text_cat_publishdate):
     pub_date = get_publish_date(date_elems, now)
     return cats, pub_date
 
-def scrape_comments(driver, url, dict_entries):
+def scrollDown(driver, value):
+    driver.execute_script("window.scrollBy(0,"+str(value)+")")
+
+def slowscrollDown(driver, steps, value_step):
+    for i in range(steps):
+        time.sleep(0.1)
+        scrollDown(driver, value_step)
+
+def extract_comment_data(comment_element):
+    """ Each comment has the following elements:
+        - post-byline: contains the name of the user that made the comment
+        - post-meta: contains the time that the comment was made
+        - post-body-inner: contains the actual comment
+        - children: answers (which are also comments) given to the main comment under study
+    :param comment_element:
+    :param dict_entries:
+    :return:
+    """
+    dict_comment = {}
+    body_element = comment_element.find_element_by_class_name("post-body")
+    comment_author = body_element.find_element_by_class_name("post-byline").text
+    comment_post_time = body_element.find_element_by_class_name("post-meta").text
+    # TODO if content are gifs / links / videos the field is empty
+    comment_body = body_element.find_element_by_class_name("post-body-inner").text
+    dict_comment["author"] = comment_author
+    # TODO parse comment post date
+    dict_comment["post_time"] = comment_post_time
+    dict_comment["body"] = comment_body
+    children = comment_element.find_elements_by_class_name("children")
+    children = [child for child in children if len(child.find_elements_by_class_name("post-body")) > 0]
+    dict_comment["children"] = []
+    if len(children) > 0:
+        for idx, child in enumerate(children):
+            dict_comment["children"].append((idx, extract_comment_data(child)))
+    return dict_comment
+
+def scrape_comments(driver, url):
     driver.get(url)
+    #slowscrollDown(driver, 80, 50)
+    #driver.get(url)
     timeout = 10
-    try:
-        WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, "post-list")))
-    except TimeoutException:
-        print("Timed out waiting for page to load Comments")
-        driver.quit()
-    # TODO review, not sure that is the actual way to go
+    #try:
+    #    WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, "post-list")))
+    #except TimeoutException:
+    #    print("Timed out waiting for page to load Comments")
+    #    driver.quit()
     thread = driver.find_element_by_id("disqus_thread")
     iframes = thread.find_elements_by_css_selector("*")
-    # the second iframe is the one of interest
-    frame = iframes[1]
+    # actual comments url
+    url_comments = iframes[1].get_attribute("src")
+    # get the comments content
+    driver.get(url_comments)
+    time.sleep(1.)
+    comments_list = driver.find_elements_by_class_name("post")
+    #print("{} has {} comments".format(url, len(comments_list)))
+    scraped_comments = []
+    for comment_element in comments_list:
+        scraped_comments.append(extract_comment_data(comment_element))
+    return scraped_comments
+
+
+
+def show_tags(elem, suff='-'):
+    print(" {} {}".format(suff, elem.tag_name))
+    #for sub_elem in elem.find_elements_by_css_selector("*"):
+    for sub_elem in elem.find_elements_by_xpath(".//*"):
+        show_tags(sub_elem, suff + "-")
 
 fino_url = "https://finofilipino.org/"
 driver = webdriver.Chrome()
+driver_secondary = webdriver.Chrome()
 driver.get(fino_url)
 
 # Wait 5 seconds for page to load
@@ -133,7 +189,7 @@ for page in range(N_pages_extract):
         # title extraction
         title = entry.find_element_by_class_name("entry-title").text
         dict_entries[url]["title"] = title
-        # content - TODO review, quite basic right now
+        # content - TODO review content extraction, quite basic right now
         content = entry.find_element_by_class_name("entry-content").text
         dict_entries[url]["content"] = content
         # tags and number of views
@@ -152,5 +208,7 @@ for page in range(N_pages_extract):
         categories, publish_date = get_cats_pubdate(text_cat_publishdate)
         dict_entries[url]["categories"] = categories
         dict_entries[url]["publish_date"] = publish_date
+        scraped_comments = scrape_comments(driver_secondary, url)
+        dict_entries[url]["comments"] = scraped_comments
 
 pickle.dump(dict_entries, open("./output/dict_entries.pkl", "wb"))
