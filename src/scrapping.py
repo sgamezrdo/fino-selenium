@@ -6,6 +6,7 @@ from selenium.common.exceptions import TimeoutException
 import pickle
 import time
 import elem_getters as eg
+import argparse
 
 def scrape_comments(driver, url):
     driver.get(url)
@@ -32,6 +33,12 @@ def scrape_comments(driver, url):
     return scraped_comments
 
 if __name__ == "__main__":
+    # command line argument parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--npages", type=int,
+                        help="number of pages to scrape")
+    args = parser.parse_args()
+    # web driver initialization
     fino_url = "https://finofilipino.org/"
     driver = webdriver.Chrome()
     driver_secondary = webdriver.Chrome()
@@ -43,16 +50,16 @@ if __name__ == "__main__":
     except TimeoutException:
         print("Timed out waiting for page to load")
         driver.quit()
-
-    xpath_npages = """/html/body[@id='fino_theme_clean']/div[@id='page']/main[@class='main']/div[@class='container']\
-    /div[@class='row']/div[@class='col-lg-8 col-xs-12']/div[@class='paging group']/a[@class='page-numbers'][3]"""
-
-    n_pages = int(driver.find_element_by_xpath(xpath_npages).text.replace(".", ""))
-    print("There are {} pages in finofilipino".format(n_pages))
-    # TODO check input
-    # TODO also use input from command line when calling scrapping.py
-    N_pages_extract = input("How many pages do you want to extract? (default = {}) ".format(n_pages))
-
+    # either use command line input, or get user input
+    if args.npages is not None:
+        N_pages_extract = args.npages
+    else:
+        xpath_npages = """/html/body[@id='fino_theme_clean']/div[@id='page']/main[@class='main']/div[@class='container']\
+        /div[@class='row']/div[@class='col-lg-8 col-xs-12']/div[@class='paging group']/a[@class='page-numbers'][3]"""
+        n_pages = int(driver.find_element_by_xpath(xpath_npages).text.replace(".", ""))
+        print("There are {} pages in finofilipino".format(n_pages))
+        N_pages_extract = input("How many pages do you want to extract? (default = {}) ".format(n_pages))
+    # check user input
     if N_pages_extract:
         try:
             N_pages_extract = int(N_pages_extract)
