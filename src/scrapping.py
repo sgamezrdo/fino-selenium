@@ -10,19 +10,10 @@ import argparse
 
 def scrape_comments(driver, url):
     driver.get(url)
-    #slowscrollDown(driver, 80, 50)
-    #driver.get(url)
-    timeout = 10
-    #try:
-    #    WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, "post-list")))
-    #except TimeoutException:
-    #    print("Timed out waiting for page to load Comments")
-    #    driver.quit()
     thread = driver.find_element_by_id("disqus_thread")
     iframes = thread.find_elements_by_css_selector("*")
     # actual comments url
     url_comments = iframes[1].get_attribute("src")
-    # get the comments content
     driver.get(url_comments)
     time.sleep(1.)
     comments_list = driver.find_elements_by_class_name("post")
@@ -45,7 +36,9 @@ if __name__ == "__main__":
     driver.get(fino_url)
     # click on cookies button
     try:
-        driver.find_element_by_class_name("qc-cmp-button").click()
+        elements_button = [el for el in driver.find_elements_by_class_name("qc-cmp-button") if el.text == "ACEPTO"]
+        cookie_button = elements_button[0]
+        cookie_button.click()
     except:
         print("Unable to click on accept cookies button")
     # Wait 5 seconds for page to load

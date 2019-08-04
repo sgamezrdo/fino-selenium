@@ -3,6 +3,7 @@ from datetime import timedelta
 
 dict_time_dims = {"SEGUNDOS": timedelta(seconds=1),
                   "MIN": timedelta(minutes=1),
+                  "MINUTOS": timedelta(minutes=1),
                   "HORA": timedelta(hours=1),
                   "HORAS": timedelta(hours=1),
                   "DÍA": timedelta(days=1),
@@ -68,6 +69,18 @@ def get_cats_pubdate(text_cat_publishdate):
     now = dt.now()
     pub_date = get_publish_date(date_elems, now)
     return cats, pub_date
+
+def get_comment_pubdate(text_compubdate):
+    """ Handles the comment publish date
+    :param text_compubdate
+    :return: comment publish date
+    """
+    #firt two chars are not useful
+    text_compubdate = text_compubdate[2:].upper()
+    date_elems = text_compubdate.split(" ")
+    now = dt.now()
+    pub_date = get_publish_date(date_elems[1:], now)
+    return pub_date
 
 
 def extract_comment_data(comment_element):
