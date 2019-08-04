@@ -43,6 +43,11 @@ if __name__ == "__main__":
     driver = webdriver.Chrome()
     driver_secondary = webdriver.Chrome()
     driver.get(fino_url)
+    # click on cookies button
+    try:
+        driver.find_element_by_class_name("qc-cmp-button").click()
+    except:
+        print("Unable to click on accept cookies button")
     # Wait 5 seconds for page to load
     timeout = 5
     try:
@@ -103,6 +108,7 @@ if __name__ == "__main__":
             categories, publish_date = eg.get_cats_pubdate(text_cat_publishdate)
             dict_entries[url]["categories"] = categories
             dict_entries[url]["publish_date"] = publish_date
+            # post comments scraping
             scraped_comments = scrape_comments(driver_secondary, url)
             dict_entries[url]["comments"] = scraped_comments
 
