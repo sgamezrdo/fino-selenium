@@ -7,6 +7,7 @@ import pickle
 import time
 import elem_getters as eg
 import argparse
+import datetime as dt
 
 def scrape_comments(driver, url):
     """ Scrapes the comments of a given post url
@@ -110,4 +111,6 @@ if __name__ == "__main__":
             scraped_comments = scrape_comments(driver_secondary, url)
             dict_entries[url]["comments"] = scraped_comments
 
-    pickle.dump(dict_entries, open("./output/dict_entries.pkl", "wb"))
+    #capture end execution time and dump data
+    end_time = dt.datetime.now().strftime("%Y_%m_%d_%H_%M")
+    pickle.dump(dict_entries, open("./output/dict_entries_n_{}_{}.pkl".format(N_pages_extract, end_time), "wb"))
