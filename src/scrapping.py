@@ -9,6 +9,11 @@ import elem_getters as eg
 import argparse
 
 def scrape_comments(driver, url):
+    """ Scrapes the comments of a given post url
+    :param driver: selenium webdriver
+    :param url: url post
+    :return: a list that contains the scrappend comment data
+    """
     driver.get(url)
     thread = driver.find_element_by_id("disqus_thread")
     iframes = thread.find_elements_by_css_selector("*")

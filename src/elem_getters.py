@@ -1,6 +1,8 @@
 from datetime import datetime as dt
 from datetime import timedelta
 
+# Dictionary mapping raw text to the time dimension that
+# represents
 dict_time_dims = {"SEGUNDOS": timedelta(seconds=1),
                   "MIN": timedelta(minutes=1),
                   "MINUTOS": timedelta(minutes=1),
@@ -42,6 +44,11 @@ def get_nbcomments(text_comments):
         return int(txt_nb)
 
 def get_publish_date(date_elemns, now):
+    """ transforms the list of string to the publish date
+    :param date_elemns: list of strings (containing time since publish date, e.g. 5 minutos)
+    :param now: datetime containing the execution time as reference
+    :return: datetime with the publish date
+    """
     if date_elemns[1] in dict_time_dims.keys():
         time_dim = dict_time_dims[date_elemns[1]]
         return now - int(date_elemns[0]) * time_dim
@@ -91,9 +98,10 @@ def extract_comment_data(comment_element):
         - children: answers (which are also comments) given to the main comment under study
     :param comment_element:
     :param dict_entries:
-    :return:
+    :return: scrapped comment data of a given comment element
     """
     dict_comment = {}
+    # extract data out of the comment element
     body_element = comment_element.find_element_by_class_name("post-body")
     comment_author = body_element.find_element_by_class_name("post-byline").text
     comment_post_time = body_element.find_element_by_class_name("post-meta").text
@@ -106,6 +114,7 @@ def extract_comment_data(comment_element):
     children = comment_element.find_elements_by_class_name("children")
     children = [child for child in children if len(child.find_elements_by_class_name("post-body")) > 0]
     dict_comment["children"] = []
+    # if there are any children, call extract_comment_data recursively
     if len(children) > 0:
         for idx, child in enumerate(children):
             dict_comment["children"].append((idx, extract_comment_data(child)))
