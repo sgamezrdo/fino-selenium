@@ -6,6 +6,7 @@ from selenium.common.exceptions import TimeoutException
 import pickle
 import time
 import elem_getters as eg
+import utils
 import argparse
 import datetime as dt
 
@@ -21,11 +22,15 @@ def scrape_comments(driver, url):
     # actual comments url
     url_comments = iframes[1].get_attribute("src")
     driver.get(url_comments)
-    time.sleep(1.)
+    time.sleep(0.5)
+    # check if there is any load more button, if there is, click it
+    utils.click_all_load_more(driver)
+    # get all comment-post elements
     comments_list = driver.find_elements_by_class_name("post")
     #print("{} has {} comments".format(url, len(comments_list)))
     scraped_comments = []
-    for comment_element in comments_list:
+    for idx, comment_element in enumerate(comments_list):
+        #print("Scrapping comment {}".format(idx))
         scraped_comments.append(eg.extract_comment_data(comment_element))
     return scraped_comments
 
