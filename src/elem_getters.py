@@ -116,6 +116,7 @@ def extract_comment_data(comment_element):
     dict_comment["children"] = []
     # if there are any children, call extract_comment_data recursively
     if len(children) > 0:
+        #print("Scrapping {} children".format(len(children)))
         for idx, child in enumerate(children):
             dict_comment["children"].append((idx, extract_comment_data(child)))
     return dict_comment
