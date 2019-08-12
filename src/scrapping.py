@@ -10,7 +10,6 @@ import utils
 import argparse
 import datetime as dt
 import logging
-from logging import handlers
 from logging.handlers import RotatingFileHandler
 import sys
 
@@ -36,8 +35,12 @@ def scrape_comments(driver, url):
     #print("{} has {} comments".format(url, len(comments_list)))
     scraped_comments = []
     for idx, comment_element in enumerate(comments_list):
-        #print("Scrapping comment {}".format(idx))
-        scraped_comments.append(eg.extract_comment_data(comment_element))
+        logger.debug(' --- Scrapping comment # {}'.format(idx))
+        try:
+            scraped_comments.append(eg.extract_comment_data(comment_element))
+        except:
+            logger.error(" - Scraping comment # {} with content {} resulted in error".format(idx, comment_element.text))
+            scraped_comments.append({})
     return scraped_comments
 
 if __name__ == "__main__":
@@ -140,5 +143,5 @@ if __name__ == "__main__":
 
     #capture end execution time and dump data
     end_time = dt.datetime.now().strftime("%Y_%m_%d_%H_%M")
-    logging.info(" - Successful scrapping session")
+    logging.debug(" - Successful scrapping session")
     pickle.dump(dict_entries, open("./output/dict_entries_n_{}_{}.pkl".format(N_pages_extract, end_time), "wb"))
