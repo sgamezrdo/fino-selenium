@@ -111,12 +111,11 @@ def extract_comment_data(comment_element):
     # TODO parse comment post date
     dict_comment["post_time"] = comment_post_time
     dict_comment["body"] = comment_body
-    children = comment_element.find_elements_by_class_name("children")
-    children = [child for child in children if len(child.find_elements_by_class_name("post-body")) > 0]
+    children = comment_element.find_elements_by_xpath("""*[contains(@class, 'children') and contains(@class, 'post-body')]""")
     dict_comment["children"] = []
     # if there are any children, call extract_comment_data recursively
     if len(children) > 0:
-        #print("Scrapping {} children".format(len(children)))
+        print("Scrapping {} children".format(len(children)))
         for idx, child in enumerate(children):
             dict_comment["children"].append((idx, extract_comment_data(child)))
     return dict_comment
