@@ -10,7 +10,6 @@ import utils
 import argparse
 import datetime as dt
 import logging
-from logging import handlers
 from logging.handlers import RotatingFileHandler
 import sys
 
@@ -31,13 +30,21 @@ def scrape_comments(driver, url):
     # check if there is any load more button, if there is, click it
     utils.click_all_load_more(driver)
     # get all comment-post elements
-    comments_list = driver.find_elements_by_class_name("post")
-    logger.debug(" -- has {} comments".format(len(comments_list)))
+    #comments_list = driver.find_elements_by_class_name("post")
+    comments_list = driver.find_elements_by_xpath("""//*[starts-with(@id, 'post-') and \
+                                                     not(../../../*[contains(@class, 'children')])]""")
+    comments_list = comments_list[1:]
+    logger.debug(" -- has {} parent comments".format(len(comments_list)))
     #print("{} has {} comments".format(url, len(comments_list)))
     scraped_comments = []
     for idx, comment_element in enumerate(comments_list):
-        #print("Scrapping comment {}".format(idx))
-        scraped_comments.append(eg.extract_comment_data(comment_element))
+        if (idx % 10) == 0:
+            logger.debug(' --- Scrapping comment # {}'.format(idx))
+        try:
+            scraped_comments.append(eg.extract_comment_data(comment_element))
+        except:
+            logger.error(" - Scraping comment # {} with content {} resulted in error".format(idx, comment_element.text))
+            scraped_comments.append({})
     return scraped_comments
 
 if __name__ == "__main__":
@@ -51,7 +58,7 @@ if __name__ == "__main__":
     ch.setFormatter(format)
     logger.addHandler(ch)
     # add file handling
-    fh = RotatingFileHandler('../logs/log.txt', maxBytes=(1048576 * 5), backupCount=7)
+    fh = RotatingFileHandler('./logs/log.txt', maxBytes=(1048576 * 5), backupCount=7)
     fh.setFormatter(format)
     logger.addHandler(fh)
 
@@ -98,6 +105,7 @@ if __name__ == "__main__":
     else:
         N_pages_extract = n_pages
 
+    dict_entries = {}
     for page in range(N_pages_extract):
         logging.info("Working at page {}".format(page + 1))
         driver.get("{}page/{}/".format(fino_url, page+1))
@@ -105,7 +113,6 @@ if __name__ == "__main__":
         entries_list = entries.find_elements_by_class_name("entry")
         # dictionary that will store all data
         # the url will be the key
-        dict_entries = {}
 
         for entry in entries_list:
             #url extraction
@@ -140,5 +147,5 @@ if __name__ == "__main__":
 
     #capture end execution time and dump data
     end_time = dt.datetime.now().strftime("%Y_%m_%d_%H_%M")
-    logging.info(" - Successful scrapping session")
+    logger.debug(" - Successful scrapping session")
     pickle.dump(dict_entries, open("./output/dict_entries_n_{}_{}.pkl".format(N_pages_extract, end_time), "wb"))
