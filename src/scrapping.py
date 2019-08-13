@@ -21,6 +21,7 @@ def scrape_comments(driver, url):
     :return: a list that contains the scrappend comment data
     """
     driver.get(url)
+    utils.click_cookies_button(driver)
     thread = driver.find_element_by_id("disqus_thread")
     iframes = thread.find_elements_by_css_selector("*")
     # actual comments url
@@ -67,17 +68,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--npages", type=int,
                         help="number of pages to scrape")
+    parser.add_argument("-a", "--aws",
+                        action="store_true",
+                        help="sets up drivers to run in aws")
     args = parser.parse_args()
     # web driver initialization
     fino_url = "https://finofilipino.org/"
-    driver = webdriver.Chrome()
-    driver_secondary = webdriver.Chrome()
+    if args.aws:
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        #options.add_argument('--no-sandbox')
+        options.add_argument('--single-process')
+        options.add_argument('--disable-dev-shm-usage')
+        # options.add_argument('window-size=1200x600')
+        driver = webdriver.Chrome(chrome_options=options)
+        driver_secondary = webdriver.Chrome(chrome_options=options)
+    else:
+        driver = webdriver.Chrome()
+        driver_secondary = webdriver.Chrome()
     driver.get(fino_url)
     # click on cookies button
     try:
-        elements_button = [el for el in driver.find_elements_by_class_name("qc-cmp-button") if el.text == "ACEPTO"]
-        cookie_button = elements_button[0]
-        cookie_button.click()
+        utils.click_cookies_button(driver)
     except:
         print("Unable to click on accept cookies button")
     # Wait 5 seconds for page to load
@@ -105,14 +117,16 @@ if __name__ == "__main__":
     else:
         N_pages_extract = n_pages
 
+    time.sleep(5.)
     dict_entries = {}
     for page in range(N_pages_extract):
-        logging.info("Working at page {}".format(page + 1))
+        logger.debug("Working at page {}".format(page + 1))
         driver.get("{}page/{}/".format(fino_url, page+1))
         entries = driver.find_element_by_id("entries")
         entries_list = entries.find_elements_by_class_name("entry")
         # dictionary that will store all data
         # the url will be the key
+        utils.click_cookies_button(driver)
 
         for entry in entries_list:
             #url extraction
