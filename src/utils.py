@@ -29,3 +29,13 @@ def click_all_load_more(driver):
         time.sleep(2.5)
         load_more_elems = driver.find_elements_by_class_name("btn.load-more__button")
     return
+
+def click_cookies_button(driver):
+    """ If there is any "accept cookies" button, click it
+    :param driver: selenium.webdriver
+    :return Nothing:
+    """
+    elements_button = [el for el in driver.find_elements_by_class_name("qc-cmp-button") if el.text == "ACEPTO"]
+    if len(elements_button) > 0:
+        cookie_button = elements_button[0]
+        cookie_button.click()

@@ -21,10 +21,7 @@ def scrape_comments(driver, url):
     :return: a list that contains the scrappend comment data
     """
     driver.get(url)
-    elements_button = [el for el in driver.find_elements_by_class_name("qc-cmp-button") if el.text == "ACEPTO"]
-    if len(elements_button) > 0:
-        cookie_button = elements_button[0]
-        cookie_button.click()
+    utils.click_cookies_button(driver)
     thread = driver.find_element_by_id("disqus_thread")
     iframes = thread.find_elements_by_css_selector("*")
     # actual comments url
@@ -92,9 +89,7 @@ if __name__ == "__main__":
     driver.get(fino_url)
     # click on cookies button
     try:
-        elements_button = [el for el in driver.find_elements_by_class_name("qc-cmp-button") if el.text == "ACEPTO"]
-        cookie_button = elements_button[0]
-        cookie_button.click()
+        utils.click_cookies_button(driver)
     except:
         print("Unable to click on accept cookies button")
     # Wait 5 seconds for page to load
@@ -131,10 +126,7 @@ if __name__ == "__main__":
         entries_list = entries.find_elements_by_class_name("entry")
         # dictionary that will store all data
         # the url will be the key
-        elements_button = [el for el in driver.find_elements_by_class_name("qc-cmp-button") if el.text == "ACEPTO"]
-        if len(elements_button) > 0:
-            cookie_button = elements_button[0]
-            cookie_button.click()
+        utils.click_cookies_button(driver)
 
         for entry in entries_list:
             #url extraction
