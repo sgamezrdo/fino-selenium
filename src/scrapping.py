@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     dict_entries = {}
     for page in range(N_pages_extract):
-        logging.info("Working at page {}".format(page + 1))
+        logger.debug("Working at page {}".format(page + 1))
         driver.get("{}page/{}/".format(fino_url, page+1))
         entries = driver.find_element_by_id("entries")
         entries_list = entries.find_elements_by_class_name("entry")
